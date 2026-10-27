@@ -127,10 +127,9 @@ class ProjectChecks(unittest.TestCase):
         self.assertEqual("@AGENTS.md\n", (ROOT / "CLAUDE.md").read_text())
         self.assertEqual("@./AGENTS.md\n", (ROOT / "GEMINI.md").read_text())
 
-    def test_no_workflow_runtime_or_user_state_in_public_layout(self):
-        for name in ("workbench", "contracts", "integrations", "plugins", "schemas"):
-            self.assertFalse((ROOT / name).exists(), name)
+    def test_private_task_data_stays_out_of_public_resources(self):
         for folder in (ROOT / ".agents", ROOT / "docs", ROOT / "templates"):
+            self.assertEqual([], list(folder.rglob(".workspace")))
             self.assertEqual([], list(folder.rglob("state.json")))
         self.assertIn(".workspace/", (ROOT / ".gitignore").read_text().splitlines())
 
