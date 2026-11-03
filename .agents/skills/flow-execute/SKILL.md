@@ -11,7 +11,7 @@ description: 在明确且获准的范围内实施、修复或继续已有方案�
 
 ## 动作
 
-- **核对工作现场**：确认真实目录、可写范围与已有未提交改动（Git 仓核对分支、HEAD 与 dirty，非 Git 目录直接使用路径）。默认单 Agent 在目标现有目录执行；仅选 worktree、多 Agent 或恢复非默认安排时先读 [执行规范](../../../docs/execution.md) 及对应的 [worktree 参考](references/worktrees.md) / [多 Agent 参考](references/multi-agent.md)。
+- **核对工作现场**：确认真实目录、可写范围与已有未提交改动（Git 仓核对分支、HEAD 与 dirty，非 Git 目录直接使用路径；多仓联调按上下游契约顺序分别核对各仓分支与检查）。默认单 Agent 在目标现有目录执行；仅选 worktree、多 Agent 或恢复非默认安排时先读 [执行规范](../../../docs/execution.md) 及对应的 [worktree 参考](references/worktrees.md) / [多 Agent 参考](references/multi-agent.md)。
 - **按边界实施**：遵循已选改法与复用不变边界，原授权内的必要修复连续推进。若需改变原算法、事务语义、公开契约或运行权限，先说明原因与影响并按 `AGENTS.md` 确认，不顺带扩大重构；仅重要未知需独立深挖时转 `flow-explore`，关键方案推翻时回 `flow-plan`。
 - **建立改动反馈**：修 bug 优先跑相关检查或复现以核实失败基线，修复后保留有价值的回归断言（未能复现时如实说明，不补造失败记录）；新行为覆盖正常输入与关键反例；重构核对前后行为基线；文档核对来源、链接与接手可执行性。
 - **局部检查与轻量闭环**：使用项目已有入口运行目标检查，修复本范围内的错误并记录命令、目录与真实结果。**单 Agent 常规小改可直接在此核对 diff 与验收条件完成收尾**，无需机械切换加载 `flow-verify` 或 [验证规范](../../../docs/verification.md)；仅多任务/多分支整合、跨环境复杂证据复用或独立核验时转入 `flow-verify`。

@@ -15,6 +15,8 @@ TEMPLATES = {
 }
 FENCE = re.compile(r"^\s{0,3}(`{3,}|~{3,})(.*)$")
 LINK = re.compile(r"(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)")
+ANCHOR = re.compile(r'<a\s+id="([^"\s]+)"\s*>\s*</a>')
+HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*$")
 
 
 def markdown_files():
@@ -40,10 +42,23 @@ def prose_lines(text):
         raise ValueError("Unclosed fenced block")
 
 
+def markdown_anchors(text):
+    """Collect explicit HTML anchors and GitHub-style heading slugs outside fences."""
+    anchors = set()
+    for _, line in prose_lines(text):
+        anchors.update(ANCHOR.findall(line))
+        heading = HEADING.match(line)
+        if heading:
+            slug = re.sub(r"[^\w\u4e00-\u9fff\s-]", "", heading.group(1).lower())
+            anchors.add(re.sub(r"\s+", "-", slug.strip()))
+    return anchors
+
+
 class ProjectChecks(unittest.TestCase):
     def test_fenced_examples_are_not_link_targets(self):
         sample = "[real](docs/context.md)\n```text\n[example](missing.md)\n```\n"
         self.assertEqual([(1, "[real](docs/context.md)")], list(prose_lines(sample)))
+        self.assertEqual({"sec-1", "标题-a"}, markdown_anchors('<a id="sec-1"></a>\n## 标题 A\n'))
         with self.assertRaises(ValueError):
             list(prose_lines("```text\nunclosed\n"))
 
@@ -95,7 +110,9 @@ class ProjectChecks(unittest.TestCase):
 
     def test_local_inline_links(self):
         checked = 0
-        for path in markdown_files():
+        files = markdown_files()
+        anchors = {p: markdown_anchors(p.read_text(encoding="utf-8")) for p in files}
+        for path in files:
             for number, line in prose_lines(path.read_text(encoding="utf-8")):
                 for raw in LINK.findall(line):
                     parsed = urlsplit(raw)
@@ -106,6 +123,12 @@ class ProjectChecks(unittest.TestCase):
                     with self.subTest(path=path.relative_to(ROOT), line=number, target=raw):
                         self.assertTrue(target.is_relative_to(ROOT), "Link escapes the project")
                         self.assertTrue(target.exists(), "Missing local link target")
+                        if parsed.fragment:
+                            self.assertIn(
+                                unquote(parsed.fragment),
+                                anchors.get(target, set()),
+                                "Missing local link anchor",
+                            )
                     checked += 1
         self.assertGreater(checked, 0)
 
